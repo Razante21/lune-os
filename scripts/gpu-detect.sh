@@ -95,29 +95,20 @@ EOF
       log_ok "Driver NVIDIA instalado"
       ;;
     amd)
+      log_info "AMD usa driver open source já incluído no sistema base"
       if using_mesa_git; then
-        log_warn "mesa-git detectado — pulando pilha Mesa/Vulkan para evitar conflito"
-        sudo pacman -S --noconfirm --needed \
-          xf86-video-amdgpu 2>/dev/null || true
-      else
-        sudo pacman -S --noconfirm --needed \
-          mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon \
-          libva-mesa-driver lib32-libva-mesa-driver \
-          mesa-vdpau lib32-mesa-vdpau xf86-video-amdgpu
+        log_warn "mesa-git detectado — não alterando pilha Mesa/Vulkan"
       fi
-      log_ok "Driver AMD instalado"
+      sudo pacman -S --noconfirm --needed xf86-video-amdgpu 2>/dev/null || true
+      log_ok "Driver AMD validado"
       ;;
     intel)
+      log_info "Intel usa driver open source já incluído no sistema base"
       if using_mesa_git; then
-        log_warn "mesa-git detectado — pulando pilha Mesa/Vulkan para evitar conflito"
-        sudo pacman -S --noconfirm --needed \
-          intel-media-driver 2>/dev/null || true
-      else
-        sudo pacman -S --noconfirm --needed \
-          mesa lib32-mesa vulkan-intel lib32-vulkan-intel \
-          intel-media-driver libva-intel-driver
+        log_warn "mesa-git detectado — não alterando pilha Mesa/Vulkan"
       fi
-      log_ok "Driver Intel instalado"
+      sudo pacman -S --noconfirm --needed intel-media-driver 2>/dev/null || true
+      log_ok "Driver Intel validado"
       ;;
   esac
 }

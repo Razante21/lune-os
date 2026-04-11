@@ -102,17 +102,7 @@ update_gpu_driver() {
       fi
       ;;
     amd|intel)
-      if using_mesa_git; then
-        log "mesa-git detectado — pulando atualização automática da pilha Mesa para evitar conflito"
-        return 0
-      fi
-      detect_mesa_family
-
-      if pkg_installed "$MESA_PKG" || pkg_installed "$LIB32_MESA_PKG"; then
-        log "Atualizando mesa..."
-        pacman -S --noconfirm --needed "$MESA_PKG" "$LIB32_MESA_PKG" 2>/dev/null >> "$LOG_FILE" || true
-        log "Mesa atualizado"
-      fi
+      log "AMD/Intel detectado — atualização automática da pilha Mesa desativada para evitar conflitos no CachyOS"
       ;;
   esac
 }

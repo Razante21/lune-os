@@ -34,6 +34,23 @@ log_warn()    { echo -e "${YELLOW}[AVISO]${NC} $1"; }
 log_error()   { echo -e "${RED}[ERRO]${NC} $1"; exit 1; }
 log_step()    { echo -e "\n${PURPLE}━━━ $1 ━━━${NC}"; }
 
+pacman_retry() {
+  local tries=0
+  local max_tries=3
+
+  until [ "$tries" -ge "$max_tries" ]; do
+    if "$@"; then
+      return 0
+    fi
+
+    tries=$((tries + 1))
+    log_warn "Falha no pacman (tentativa $tries/$max_tries). Recarregando bases e tentando novamente..."
+    sudo pacman -Syy --noconfirm 2>/dev/null || true
+  done
+
+  return 1
+}
+
 # ── Verificações iniciais ────────────────────────────────────
 check_root() {
   if [[ $EUID -eq 0 ]]; then
@@ -101,10 +118,11 @@ install_dependencies() {
   )
 
   log_info "Atualizando sistema..."
-  sudo pacman -Syu --noconfirm
+  pacman_retry sudo pacman -Syu --noconfirm || \
+    log_warn "Falha ao atualizar sistema (mirror/rede). Continuando com o que já está disponível."
 
   log_info "Instalando pacotes necessários..."
-  sudo pacman -S --noconfirm --needed "${packages[@]}" || \
+  pacman_retry sudo pacman -S --noconfirm --needed "${packages[@]}" || \
     log_warn "Alguns pacotes podem não ter sido instalados. Verifique manualmente."
 
   log_ok "Dependências instaladas"
