@@ -68,13 +68,12 @@ install_dependencies() {
   local packages=(
     hyprland
     waybar
-    rofi-wayland
+    rofi
     kitty
     swaync
     hyprlock
     hypridle
-    swww
-    wallust
+    awww
     wine
     wine-mono
     noto-fonts

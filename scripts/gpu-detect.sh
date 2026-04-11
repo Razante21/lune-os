@@ -96,9 +96,9 @@ EOF
       ;;
     amd)
       if using_mesa_git; then
-        log_warn "mesa-git detectado — pulando pacotes baseados em Mesa para evitar conflito"
+        log_warn "mesa-git detectado — pulando pilha Mesa/Vulkan para evitar conflito"
         sudo pacman -S --noconfirm --needed \
-          vulkan-radeon libva-mesa-driver xf86-video-amdgpu 2>/dev/null || true
+          xf86-video-amdgpu 2>/dev/null || true
       else
         sudo pacman -S --noconfirm --needed \
           mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon \
@@ -109,9 +109,9 @@ EOF
       ;;
     intel)
       if using_mesa_git; then
-        log_warn "mesa-git detectado — pulando pacotes baseados em Mesa para evitar conflito"
+        log_warn "mesa-git detectado — pulando pilha Mesa/Vulkan para evitar conflito"
         sudo pacman -S --noconfirm --needed \
-          vulkan-intel intel-media-driver 2>/dev/null || true
+          intel-media-driver 2>/dev/null || true
       else
         sudo pacman -S --noconfirm --needed \
           mesa lib32-mesa vulkan-intel lib32-vulkan-intel \
