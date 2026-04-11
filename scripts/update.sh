@@ -11,6 +11,20 @@ REBOOT_NEEDED=false
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"; }
 
+pkg_installed() {
+  command -v pacman &>/dev/null && pacman -Qq "$1" &>/dev/null
+}
+
+detect_mesa_family() {
+  if pkg_installed mesa-git; then
+    MESA_PKG="mesa-git"
+    LIB32_MESA_PKG="lib32-mesa-git"
+  else
+    MESA_PKG="mesa"
+    LIB32_MESA_PKG="lib32-mesa"
+  fi
+}
+
 notify() {
   local title="$1"
   local body="$2"
@@ -84,9 +98,11 @@ update_gpu_driver() {
       fi
       ;;
     amd|intel)
-      if pacman -Qu mesa 2>/dev/null | grep -q .; then
+      detect_mesa_family
+
+      if pkg_installed "$MESA_PKG" || pkg_installed "$LIB32_MESA_PKG"; then
         log "Atualizando mesa..."
-        pacman -S --noconfirm mesa lib32-mesa 2>/dev/null >> "$LOG_FILE" || true
+        pacman -S --noconfirm --needed "$MESA_PKG" "$LIB32_MESA_PKG" 2>/dev/null >> "$LOG_FILE" || true
         log "Mesa atualizado"
       fi
       ;;

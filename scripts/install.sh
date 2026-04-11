@@ -86,7 +86,7 @@ install_dependencies() {
     libreoffice-fresh
     flatpak
     timeshift
-    déjà-dup
+    deja-dup
     blueman
     cups
     cups-filters
