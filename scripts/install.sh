@@ -185,6 +185,16 @@ install_dotfiles() {
 setup_flatpak() {
   log_step "Configurando Flathub"
 
+  if ! command -v flatpak &>/dev/null; then
+    log_warn "flatpak não encontrado. Tentando instalar..."
+    pacman_retry sudo pacman -S --noconfirm --needed flatpak || true
+  fi
+
+  if ! command -v flatpak &>/dev/null; then
+    log_warn "flatpak indisponível no momento. Pulando configuração do Flathub."
+    return 0
+  fi
+
   flatpak remote-add --if-not-exists flathub \
     https://dl.flathub.org/repo/flathub.flatpakrepo
 
