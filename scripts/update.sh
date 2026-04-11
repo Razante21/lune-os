@@ -25,6 +25,10 @@ detect_mesa_family() {
   fi
 }
 
+using_mesa_git() {
+  pkg_installed mesa-git
+}
+
 notify() {
   local title="$1"
   local body="$2"
@@ -98,6 +102,10 @@ update_gpu_driver() {
       fi
       ;;
     amd|intel)
+      if using_mesa_git; then
+        log "mesa-git detectado — pulando atualização automática da pilha Mesa para evitar conflito"
+        return 0
+      fi
       detect_mesa_family
 
       if pkg_installed "$MESA_PKG" || pkg_installed "$LIB32_MESA_PKG"; then
