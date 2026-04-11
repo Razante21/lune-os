@@ -165,12 +165,18 @@ install_dotfiles() {
 
   # Copiar dotfiles
   log_info "Aplicando dotfiles do Lune OS..."
-  cp -r "$dotfiles_dir/hypr"     "$config_dir/"
-  cp -r "$dotfiles_dir/waybar"   "$config_dir/"
-  cp -r "$dotfiles_dir/rofi"     "$config_dir/"
-  cp -r "$dotfiles_dir/kitty"    "$config_dir/"
-  cp -r "$dotfiles_dir/swaync"   "$config_dir/"
-  cp -r "$dotfiles_dir/hyprlock" "$config_dir/"
+
+  local dotfile_components=(hypr waybar rofi kitty swaync hyprlock)
+  local component
+
+  for component in "${dotfile_components[@]}"; do
+    if [ -d "$dotfiles_dir/$component" ]; then
+      cp -r "$dotfiles_dir/$component" "$config_dir/"
+      log_info "Dotfile aplicado: $component"
+    else
+      log_warn "Dotfile ausente: $component (pulando)"
+    fi
+  done
 
   log_ok "Dotfiles instalados"
 }
