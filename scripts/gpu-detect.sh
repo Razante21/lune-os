@@ -23,7 +23,7 @@ pkg_installed() {
 }
 
 using_mesa_git() {
-  pkg_installed mesa-git
+  pkg_installed mesa-git || pkg_installed lib32-mesa-git
 }
 
 install_pciutils() {
