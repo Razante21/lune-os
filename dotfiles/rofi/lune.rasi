@@ -1,0 +1,116 @@
+/* Lune OS — Rofi Theme */
+/* Card centralizado com glassmorphism */
+
+@import "colors.rasi"
+
+/* ── Base ────────────────────────────────────────────────── */
+* {
+    font:            "Inter 13";
+    background-color: transparent;
+    text-color:      @foreground;
+}
+
+/* ── Janela principal ────────────────────────────────────── */
+window {
+    location:         center;
+    anchor:           center;
+    transparency:     "real";
+    background-color: @background;
+    border:           1.5px solid @border;
+    border-radius:    18px;
+    width:            580px;
+    padding:          16px;
+}
+
+/* ── Container principal ─────────────────────────────────── */
+mainbox {
+    background-color: transparent;
+    spacing:          12px;
+    padding:          0;
+    children:         [ inputbar, listview ];
+}
+
+/* ── Campo de busca ──────────────────────────────────────── */
+inputbar {
+    background-color: @surface;
+    border-radius:    12px;
+    padding:          10px 14px;
+    spacing:          8px;
+    children:         [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @accent;
+    font:             "JetBrainsMono Nerd Font 14";
+}
+
+entry {
+    background-color: transparent;
+    text-color:       @foreground;
+    placeholder:      "Search apps, files...";
+    placeholder-color: @text-dim;
+    cursor:           text;
+}
+
+/* ── Lista de resultados ─────────────────────────────────── */
+listview {
+    background-color: transparent;
+    spacing:          4px;
+    cycle:            false;
+    dynamic:          true;
+    layout:           vertical;
+    lines:            8;
+    fixed-height:     false;
+}
+
+/* ── Item individual ─────────────────────────────────────── */
+element {
+    background-color: transparent;
+    border-radius:    10px;
+    padding:          10px 12px;
+    spacing:          10px;
+    orientation:      horizontal;
+}
+
+element:hover {
+    background-color: @surface-hover;
+}
+
+element selected {
+    background-color: @selected;
+    border-left:      2px solid @accent;
+}
+
+element-icon {
+    size:             28px;
+    background-color: transparent;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       @foreground;
+    highlight:        bold @accent;
+    vertical-align:   0.5;
+}
+
+element selected .element-text {
+    text-color: @foreground;
+}
+
+/* ── Sem resultados ──────────────────────────────────────── */
+error-message {
+    background-color: transparent;
+    text-color:       @text-dim;
+    padding:          20px;
+}
+
+/* ── Barra de scroll ─────────────────────────────────────── */
+scrollbar {
+    width:            4px;
+    background-color: transparent;
+    handle-color:     @border;
+    handle-width:     4px;
+    border-radius:    2px;
+    padding:          0;
+}

@@ -1,0 +1,146 @@
+// Lune OS — Waybar Configuration
+// Três ilhas flutuantes: workspaces | relógio | sistema
+
+[
+  // ── ILHA ESQUERDA — Workspaces ─────────────────────────
+  {
+    "layer": "top",
+    "position": "top",
+    "margin-top": 12,
+    "margin-left": 16,
+    "margin-right": 0,
+    "exclusive": true,
+    "passthrough": false,
+    "name": "bar-left",
+
+    "modules-left": ["hyprland/workspaces"],
+    "modules-center": [],
+    "modules-right": [],
+
+    "hyprland/workspaces": {
+      "format": "",
+      "format-icons": {
+        "active": "●",
+        "default": "○",
+        "urgent": "◉"
+      },
+      "on-click": "activate",
+      "on-scroll-up": "hyprctl dispatch workspace e-1",
+      "on-scroll-down": "hyprctl dispatch workspace e+1",
+      "all-outputs": false,
+      "show-special": false,
+      "persistent-workspaces": {
+        "*": 5
+      }
+    }
+  },
+
+  // ── ILHA CENTRAL — Relógio ─────────────────────────────
+  {
+    "layer": "top",
+    "position": "top",
+    "margin-top": 12,
+    "margin-left": 0,
+    "margin-right": 0,
+    "exclusive": true,
+    "passthrough": false,
+    "name": "bar-center",
+
+    "modules-left": [],
+    "modules-center": ["clock"],
+    "modules-right": [],
+
+    "clock": {
+      "format": "{:%H:%M}",
+      "format-alt": "{:%H:%M  %a, %d %b}",
+      "tooltip-format": "<big>{:%A, %d de %B de %Y}</big>\n<tt><small>{calendar}</small></tt>",
+      "calendar": {
+        "mode": "month",
+        "on-scroll": 1,
+        "format": {
+          "months": "<span color='#C8A8E9'><b>{}</b></span>",
+          "weekdays": "<span color='#7EB8F7'><b>{}</b></span>",
+          "today": "<span color='#C8A8E9'><b>{}</b></span>"
+        }
+      },
+      "on-click": "gnome-calendar",
+      "on-click-right": "hyprctl dispatch exec 'kitty -e calcurse'"
+    }
+  },
+
+  // ── ILHA DIREITA — Sistema ─────────────────────────────
+  {
+    "layer": "top",
+    "position": "top",
+    "margin-top": 12,
+    "margin-left": 0,
+    "margin-right": 16,
+    "exclusive": true,
+    "passthrough": false,
+    "name": "bar-right",
+
+    "modules-left": [],
+    "modules-center": [],
+    "modules-right": [
+      "pulseaudio",
+      "network",
+      "battery",
+      "tray"
+    ],
+
+    "pulseaudio": {
+      "format": "{icon} {volume}%",
+      "format-muted": "󰖁",
+      "format-icons": {
+        "headphone": "󰋋",
+        "hands-free": "󰋎",
+        "headset": "󰋎",
+        "phone": "",
+        "portable": "",
+        "car": "",
+        "default": ["󰕿", "󰖀", "󰕾"]
+      },
+      "on-click": "pavucontrol",
+      "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+      "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
+      "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-",
+      "tooltip": true,
+      "tooltip-format": "{desc}"
+    },
+
+    "network": {
+      "format-wifi": "󰤨 {essid}",
+      "format-ethernet": "󰈀",
+      "format-linked": "󰈀 (Sem IP)",
+      "format-disconnected": "󰤭",
+      "format-alt": "󰤨 {ipaddr}/{cidr}",
+      "tooltip-format": "󰤨 {essid}\nIP: {ipaddr}\nForça: {signalStrength}%",
+      "tooltip-format-ethernet": "󰈀 {ifname}\nIP: {ipaddr}",
+      "tooltip-format-disconnected": "Desconectado",
+      "on-click": "nm-connection-editor",
+      "on-click-right": "~/.config/hypr/scripts/wifi-toggle.sh",
+      "interval": 5
+    },
+
+    "battery": {
+      "states": {
+        "good": 95,
+        "warning": 20,
+        "critical": 10
+      },
+      "format": "{icon} {capacity}%",
+      "format-charging": "󰂄 {capacity}%",
+      "format-plugged": "󰚥 {capacity}%",
+      "format-alt": "{icon} {time}",
+      "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+      "tooltip-format": "{timeTo}\nCiclos: {cycles}",
+      "interval": 30
+    },
+
+    "tray": {
+      "icon-size": 14,
+      "spacing": 8,
+      "show-passive-items": true
+    }
+  }
+]

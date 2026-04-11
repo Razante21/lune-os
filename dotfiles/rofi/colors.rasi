@@ -1,0 +1,14 @@
+/* Lune OS — Rofi Colors */
+/* Sobrescrito automaticamente pelo Wallust */
+
+* {
+    background:    rgba(13,  14,  20,  0.85);
+    surface:       rgba(26,  27,  38,  0.60);
+    surface-hover: rgba(46,  47,  62,  0.60);
+    selected:      rgba(200, 168, 233, 0.12);
+    border:        rgba(200, 168, 233, 0.35);
+    accent:        rgba(200, 168, 233, 1.00);
+    accent2:       rgba(126, 184, 247, 1.00);
+    foreground:    rgba(232, 232, 240, 1.00);
+    text-dim:      rgba(160, 160, 176, 0.70);
+}

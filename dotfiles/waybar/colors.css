@@ -1,0 +1,15 @@
+/* Lune OS — Color Palette */
+/* Gerado pelo Wallust ao trocar wallpaper */
+/* Este arquivo é sobrescrito automaticamente */
+
+@define-color background  rgba(13, 14, 20, 0.65);
+@define-color surface     rgba(26, 27, 38, 0.8);
+@define-color accent      rgba(200, 168, 233, 1);
+@define-color accent2     rgba(126, 184, 247, 1);
+@define-color accent3     rgba(155, 127, 212, 1);
+@define-color text        rgba(232, 232, 240, 1);
+@define-color text-dim    rgba(160, 160, 176, 0.7);
+@define-color border      rgba(200, 168, 233, 0.4);
+@define-color success     rgba(111, 207, 151, 1);
+@define-color warning     rgba(242, 153, 74, 1);
+@define-color error       rgba(235, 87, 87, 1);
