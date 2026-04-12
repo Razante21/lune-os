@@ -9,23 +9,17 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-log_info() { echo -e "${BLUE}[GPU]${NC} $1"; }
-log_ok()   { echo -e "${GREEN}[GPU]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[GPU]${NC} $1"; }
+log_info()  { echo -e "${BLUE}[GPU]${NC} $1"; }
+log_ok()    { echo -e "${GREEN}[GPU]${NC} $1"; }
+log_warn()  { echo -e "${YELLOW}[GPU]${NC} $1"; }
 
+# Detectar ambiente
 IS_CODESPACES=false
 IS_CACHYOS=false
 [ -n "$CODESPACE_NAME" ] && IS_CODESPACES=true
 grep -q "CachyOS" /etc/os-release 2>/dev/null && IS_CACHYOS=true
 
-pkg_installed() {
-  command -v pacman &>/dev/null && pacman -Qq "$1" &>/dev/null
-}
-
-using_mesa_git() {
-  pkg_installed mesa-git || pkg_installed lib32-mesa-git
-}
-
+# ── Instalar pciutils conforme o ambiente ────────────────────
 install_pciutils() {
   command -v lspci &>/dev/null && return 0
   log_info "Instalando pciutils..."
@@ -36,6 +30,7 @@ install_pciutils() {
   fi
 }
 
+# ── Detectar GPU ─────────────────────────────────────────────
 detect_gpu() {
   log_info "Detectando placa de vídeo..."
   install_pciutils
@@ -71,6 +66,7 @@ detect_gpu() {
   fi
 }
 
+# ── Instalar driver (só no CachyOS real) ─────────────────────
 install_driver() {
   if $IS_CODESPACES || [ "$GPU_VENDOR" = "virtual" ]; then
     log_warn "Codespaces — instalação de driver ignorada (apenas teste)"
@@ -95,30 +91,26 @@ EOF
       log_ok "Driver NVIDIA instalado"
       ;;
     amd)
-      log_info "AMD usa driver open source já incluído no sistema base"
-      if using_mesa_git; then
-        log_warn "mesa-git detectado — não alterando pilha Mesa/Vulkan"
-      fi
-      sudo pacman -S --noconfirm --needed xf86-video-amdgpu 2>/dev/null || true
-      log_ok "Driver AMD validado"
+      sudo pacman -S --noconfirm --needed \
+        mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon libva-mesa-driver mesa-vdpau
+      log_ok "Driver AMD instalado"
       ;;
     intel)
-      log_info "Intel usa driver open source já incluído no sistema base"
-      if using_mesa_git; then
-        log_warn "mesa-git detectado — não alterando pilha Mesa/Vulkan"
-      fi
-      sudo pacman -S --noconfirm --needed intel-media-driver 2>/dev/null || true
-      log_ok "Driver Intel validado"
+      sudo pacman -S --noconfirm --needed \
+        mesa lib32-mesa vulkan-intel intel-media-driver
+      log_ok "Driver Intel instalado"
       ;;
   esac
 }
 
+# ── Salvar vendor ────────────────────────────────────────────
 save_vendor() {
   mkdir -p "$HOME/.config/lune"
   echo "$GPU_VENDOR" > "$HOME/.config/lune/gpu-vendor"
   log_info "Vendor salvo em ~/.config/lune/gpu-vendor"
 }
 
+# ── Relatório ────────────────────────────────────────────────
 show_report() {
   echo ""
   echo -e "${GREEN}════════════════════════════════════${NC}"
@@ -141,6 +133,7 @@ show_report() {
   echo ""
 }
 
+# ── Main ─────────────────────────────────────────────────────
 main() {
   detect_gpu
   install_driver

@@ -34,23 +34,6 @@ log_warn()    { echo -e "${YELLOW}[AVISO]${NC} $1"; }
 log_error()   { echo -e "${RED}[ERRO]${NC} $1"; exit 1; }
 log_step()    { echo -e "\n${PURPLE}━━━ $1 ━━━${NC}"; }
 
-pacman_retry() {
-  local tries=0
-  local max_tries=3
-
-  until [ "$tries" -ge "$max_tries" ]; do
-    if "$@"; then
-      return 0
-    fi
-
-    tries=$((tries + 1))
-    log_warn "Falha no pacman (tentativa $tries/$max_tries). Recarregando bases e tentando novamente..."
-    sudo pacman -Syy --noconfirm 2>/dev/null || true
-  done
-
-  return 1
-}
-
 # ── Verificações iniciais ────────────────────────────────────
 check_root() {
   if [[ $EUID -eq 0 ]]; then
@@ -85,12 +68,13 @@ install_dependencies() {
   local packages=(
     hyprland
     waybar
-    rofi
+    rofi-wayland
     kitty
     swaync
     hyprlock
     hypridle
-    awww
+    swww
+    wallust
     wine
     wine-mono
     noto-fonts
@@ -102,7 +86,7 @@ install_dependencies() {
     libreoffice-fresh
     flatpak
     timeshift
-    deja-dup
+    déjà-dup
     blueman
     cups
     cups-filters
@@ -118,11 +102,10 @@ install_dependencies() {
   )
 
   log_info "Atualizando sistema..."
-  pacman_retry sudo pacman -Syu --noconfirm || \
-    log_warn "Falha ao atualizar sistema (mirror/rede). Continuando com o que já está disponível."
+  sudo pacman -Syu --noconfirm
 
   log_info "Instalando pacotes necessários..."
-  pacman_retry sudo pacman -S --noconfirm --needed "${packages[@]}" || \
+  sudo pacman -S --noconfirm --needed "${packages[@]}" || \
     log_warn "Alguns pacotes podem não ter sido instalados. Verifique manualmente."
 
   log_ok "Dependências instaladas"
@@ -165,18 +148,12 @@ install_dotfiles() {
 
   # Copiar dotfiles
   log_info "Aplicando dotfiles do Lune OS..."
-
-  local dotfile_components=(hypr waybar rofi kitty swaync hyprlock)
-  local component
-
-  for component in "${dotfile_components[@]}"; do
-    if [ -d "$dotfiles_dir/$component" ]; then
-      cp -r "$dotfiles_dir/$component" "$config_dir/"
-      log_info "Dotfile aplicado: $component"
-    else
-      log_warn "Dotfile ausente: $component (pulando)"
-    fi
-  done
+  cp -r "$dotfiles_dir/hypr"     "$config_dir/"
+  cp -r "$dotfiles_dir/waybar"   "$config_dir/"
+  cp -r "$dotfiles_dir/rofi"     "$config_dir/"
+  cp -r "$dotfiles_dir/kitty"    "$config_dir/"
+  cp -r "$dotfiles_dir/swaync"   "$config_dir/"
+  cp -r "$dotfiles_dir/hyprlock" "$config_dir/"
 
   log_ok "Dotfiles instalados"
 }
@@ -184,16 +161,6 @@ install_dotfiles() {
 # ── Configurar Flathub ───────────────────────────────────────
 setup_flatpak() {
   log_step "Configurando Flathub"
-
-  if ! command -v flatpak &>/dev/null; then
-    log_warn "flatpak não encontrado. Tentando instalar..."
-    pacman_retry sudo pacman -S --noconfirm --needed flatpak || true
-  fi
-
-  if ! command -v flatpak &>/dev/null; then
-    log_warn "flatpak indisponível no momento. Pulando configuração do Flathub."
-    return 0
-  fi
 
   flatpak remote-add --if-not-exists flathub \
     https://dl.flathub.org/repo/flathub.flatpakrepo

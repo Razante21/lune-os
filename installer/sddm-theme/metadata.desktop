@@ -1,0 +1,7 @@
+[SddmGreeterTheme]
+Name=Lune OS
+Description=Lune OS Login Screen — Your world, just lighter.
+Author=Lune OS Project
+License=GPL-3.0
+Type=sddm-theme
+Version=0.1.0
