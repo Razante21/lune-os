@@ -68,6 +68,12 @@ detect_gpu() {
 
 # ── Instalar driver (só no CachyOS real) ─────────────────────
 install_driver() {
+  # Verificar se ja tem mesa-git instalado (CachyOS usa mesa-git por padrao)
+  if pacman -Qq mesa-git &>/dev/null 2>&1 || pacman -Qq lib32-mesa-git &>/dev/null 2>&1; then
+    log_warn "mesa-git detectado — nao substituindo pilha Mesa (CachyOS usa versao de desenvolvimento)"
+    log_ok "Driver AMD/Intel ja configurado via mesa-git"
+    return 0
+  fi
   if $IS_CODESPACES || [ "$GPU_VENDOR" = "virtual" ]; then
     log_warn "Codespaces — instalação de driver ignorada (apenas teste)"
     log_info "No CachyOS real instalaria o driver: $GPU_VENDOR"
