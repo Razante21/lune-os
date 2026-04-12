@@ -249,16 +249,15 @@ run_base_scripts() {
 install_common() {
   log_step "Instalando pacotes essenciais"
 
-  sudo pacman -S --noconfirm --needed \
-    wine wine-mono \
-    flatpak \
-    timeshift \
-    noto-fonts \
-    ttf-inter \
-    ttf-jetbrains-mono-nerd \
-    nautilus vlc libreoffice-fresh \
-    blueman cups \
-    xdg-user-dirs
+  local packages=(
+    wine wine-mono flatpak timeshift
+    noto-fonts inter-font ttf-jetbrains-mono-nerd
+    nautilus vlc libreoffice-fresh blueman cups xdg-user-dirs
+  )
+
+  for pkg in "${packages[@]}"; do
+    sudo pacman -S --noconfirm --needed "$pkg" 2>/dev/null ||       log_warn "Pacote nao encontrado: $pkg — pulando"
+  done
 
   flatpak remote-add --if-not-exists flathub \
     https://dl.flathub.org/repo/flathub.flatpakrepo
