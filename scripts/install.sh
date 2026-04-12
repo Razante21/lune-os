@@ -1,20 +1,18 @@
 #!/bin/bash
 # Lune OS — Script Principal de Instalação
-# Roda após a instalação base do CachyOS
-# Versão: 0.1.0
+# Detecta o ambiente desktop e aplica o tema Lune correspondente
+# Versão: 0.2.0
 
 set -e
 
-# ── Cores para output ────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# ── Banner ───────────────────────────────────────────────────
 banner() {
   echo -e "${PURPLE}"
   echo "  ██╗     ██╗   ██╗███╗   ██╗███████╗"
@@ -27,275 +25,280 @@ banner() {
   echo ""
 }
 
-# ── Funções de log ───────────────────────────────────────────
-log_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
-log_ok()      { echo -e "${GREEN}[OK]${NC} $1"; }
-log_warn()    { echo -e "${YELLOW}[AVISO]${NC} $1"; }
-log_error()   { echo -e "${RED}[ERRO]${NC} $1"; exit 1; }
-log_step()    { echo -e "\n${PURPLE}━━━ $1 ━━━${NC}"; }
+log_info()  { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_ok()    { echo -e "${GREEN}[OK]${NC} $1"; }
+log_warn()  { echo -e "${YELLOW}[AVISO]${NC} $1"; }
+log_error() { echo -e "${RED}[ERRO]${NC} $1"; exit 1; }
+log_step()  { echo -e "\n${PURPLE}━━━ $1 ━━━${NC}"; }
 
-# ── Verificações iniciais ────────────────────────────────────
-check_root() {
-  if [[ $EUID -eq 0 ]]; then
-    log_error "Não execute este script como root. Use seu usuário normal."
-  fi
-}
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
-check_internet() {
-  log_info "Verificando conexão com a internet..."
-  if ! ping -c 1 archlinux.org &>/dev/null; then
-    log_error "Sem conexão com a internet. Conecte-se e tente novamente."
-  fi
-  log_ok "Conexão OK"
-}
+# ── Detectar ambiente desktop ────────────────────────────────
+detect_desktop() {
+  log_step "Detectando ambiente desktop"
 
-check_cachyos() {
-  log_info "Verificando se o sistema é CachyOS..."
-  if ! grep -q "CachyOS" /etc/os-release 2>/dev/null; then
-    log_warn "Sistema não identificado como CachyOS."
-    log_warn "O Lune OS é projetado para CachyOS. Continuar pode causar problemas."
-    read -rp "Continuar mesmo assim? [s/N] " confirm
-    [[ "$confirm" =~ ^[Ss]$ ]] || exit 0
+  # Verificar pela sessão atual
+  if [ -n "$XDG_CURRENT_DESKTOP" ]; then
+    DESKTOP=$(echo "$XDG_CURRENT_DESKTOP" | tr '[:upper:]' '[:lower:]')
+  elif [ -n "$DESKTOP_SESSION" ]; then
+    DESKTOP=$(echo "$DESKTOP_SESSION" | tr '[:upper:]' '[:lower:]')
   else
-    log_ok "CachyOS detectado"
+    DESKTOP="unknown"
   fi
-}
 
-# ── Instalação de dependências ───────────────────────────────
-install_dependencies() {
-  log_step "Instalando dependências base"
-
-  local packages=(
-    hyprland
-    waybar
-    rofi-wayland
-    kitty
-    swaync
-    hyprlock
-    hypridle
-    swww
-    wallust
-    wine
-    wine-mono
-    noto-fonts
-    ttf-inter
-    ttf-jetbrains-mono-nerd
-    nautilus
-    file-roller
-    vlc
-    libreoffice-fresh
-    flatpak
-    timeshift
-    déjà-dup
-    blueman
-    cups
-    cups-filters
-    network-manager-applet
-    wlogout
-    grim
-    slurp
-    cliphist
-    wl-clipboard
-    polkit-kde-agent
-    xdg-desktop-portal-hyprland
-    xdg-user-dirs
-  )
-
-  log_info "Atualizando sistema..."
-  sudo pacman -Syu --noconfirm
-
-  log_info "Instalando pacotes necessários..."
-  sudo pacman -S --noconfirm --needed "${packages[@]}" || \
-    log_warn "Alguns pacotes podem não ter sido instalados. Verifique manualmente."
-
-  log_ok "Dependências instaladas"
-}
-
-# ── Executar sub-scripts ─────────────────────────────────────
-run_scripts() {
-  local script_dir
-  script_dir="$(dirname "$0")"
-
-  log_step "Detectando e instalando driver GPU"
-  bash "$script_dir/gpu-detect.sh"
-
-  log_step "Configurando compatibilidade com .exe"
-  bash "$script_dir/binfmt.sh"
-
-  log_step "Aplicando otimizações de performance"
-  bash "$script_dir/performance.sh"
-
-  log_step "Configurando sistema de pastas"
-  bash "$script_dir/folders.sh"
-
-  log_step "Configurando Adaptive Color System"
-  bash "$script_dir/wallust.sh"
-}
-
-# ── Instalar dotfiles ────────────────────────────────────────
-install_dotfiles() {
-  log_step "Instalando dotfiles do Lune OS"
-
-  local config_dir="$HOME/.config"
-  local dotfiles_dir
-  dotfiles_dir="$(dirname "$0")/../dotfiles"
-
-  # Backup dos configs existentes
-  if [ -d "$config_dir/hypr" ]; then
-    log_info "Fazendo backup dos configs existentes..."
-    mv "$config_dir/hypr" "$config_dir/hypr.bkp.$(date +%Y%m%d%H%M%S)"
+  # Verificar pacotes instalados como fallback
+  if [[ "$DESKTOP" == "unknown" ]]; then
+    if command -v plasmashell &>/dev/null; then
+      DESKTOP="kde"
+    elif command -v gnome-shell &>/dev/null; then
+      DESKTOP="gnome"
+    elif command -v hyprctl &>/dev/null; then
+      DESKTOP="hyprland"
+    fi
   fi
+
+  # Normalizar nome
+  case "$DESKTOP" in
+    *kde*|*plasma*) DESKTOP_NAME="KDE Plasma" ;;
+    *gnome*)        DESKTOP_NAME="GNOME" ;;
+    *hyprland*)     DESKTOP_NAME="Hyprland" ;;
+    *)              DESKTOP_NAME="Desconhecido" ;;
+  esac
+
+  log_ok "Ambiente detectado: $DESKTOP_NAME"
+}
+
+# ── Perguntar se quer mudar o desktop ───────────────────────
+choose_desktop() {
+  echo ""
+  echo -e "${CYAN}Qual ambiente desktop você quer usar com o Lune OS?${NC}"
+  echo ""
+  echo "  1) Hyprland   — Visual completo Lune OS (recomendado, requer GPU real)"
+  echo "  2) KDE Plasma — Tema Lune no KDE (funciona em VM)"
+  echo "  3) GNOME      — Tema Lune no GNOME (funciona em VM)"
+  echo "  4) Manter atual ($DESKTOP_NAME)"
+  echo ""
+  read -rp "Escolha [1-4]: " choice
+
+  case "$choice" in
+    1) INSTALL_DESKTOP="hyprland" ;;
+    2) INSTALL_DESKTOP="kde" ;;
+    3) INSTALL_DESKTOP="gnome" ;;
+    4) INSTALL_DESKTOP="$DESKTOP" ;;
+    *) INSTALL_DESKTOP="hyprland" ;;
+  esac
+
+  log_ok "Ambiente escolhido: $INSTALL_DESKTOP"
+}
+
+# ── Instalar Hyprland ────────────────────────────────────────
+install_hyprland() {
+  log_step "Instalando Hyprland + componentes Lune OS"
+
+  sudo pacman -S --noconfirm --needed \
+    hyprland hyprland-qtutils \
+    waybar rofi-wayland kitty \
+    swaync hyprlock hypridle \
+    swww wallust \
+    xdg-desktop-portal-hyprland \
+    polkit-kde-agent \
+    wl-clipboard cliphist \
+    grim slurp \
+    wlogout playerctl brightnessctl \
+    nm-applet blueman
+
+  log_ok "Hyprland instalado"
+}
+
+# ── Instalar KDE ─────────────────────────────────────────────
+install_kde() {
+  log_step "Instalando KDE Plasma com tema Lune"
+
+  sudo pacman -S --noconfirm --needed \
+    plasma-desktop plasma-pa plasma-nm \
+    dolphin konsole kscreen \
+    kde-gtk-config breeze breeze-gtk \
+    sddm
+
+  sudo systemctl enable sddm
+  log_ok "KDE Plasma instalado"
+}
+
+# ── Instalar GNOME ───────────────────────────────────────────
+install_gnome() {
+  log_step "Instalando GNOME com tema Lune"
+
+  sudo pacman -S --noconfirm --needed \
+    gnome gnome-tweaks \
+    gdm
+
+  sudo systemctl enable gdm
+  log_ok "GNOME instalado"
+}
+
+# ── Aplicar dotfiles Hyprland ────────────────────────────────
+apply_hyprland_dotfiles() {
+  log_step "Aplicando dotfiles Hyprland do Lune OS"
+
+  CONFIG="$HOME/.config"
+  DOTFILES="$REPO_DIR/dotfiles"
+
+  # Backup
+  for dir in hypr waybar rofi kitty swaync hyprlock; do
+    if [ -d "$CONFIG/$dir" ]; then
+      mv "$CONFIG/$dir" "$CONFIG/$dir.bkp.$(date +%Y%m%d%H%M%S)"
+      log_info "Backup criado: $dir"
+    fi
+  done
 
   # Copiar dotfiles
-  log_info "Aplicando dotfiles do Lune OS..."
-  cp -r "$dotfiles_dir/hypr"     "$config_dir/"
-  cp -r "$dotfiles_dir/waybar"   "$config_dir/"
-  cp -r "$dotfiles_dir/rofi"     "$config_dir/"
-  cp -r "$dotfiles_dir/kitty"    "$config_dir/"
-  cp -r "$dotfiles_dir/swaync"   "$config_dir/"
-  cp -r "$dotfiles_dir/hyprlock" "$config_dir/"
+  mkdir -p "$CONFIG/hypr/conf" "$CONFIG/hypr/scripts"
+  cp "$DOTFILES/hypr/hyprland.conf"     "$CONFIG/hypr/"
+  cp "$DOTFILES/hypr/conf/"*.conf       "$CONFIG/hypr/conf/"
+  cp "$DOTFILES/hypr/scripts/"*.sh      "$CONFIG/hypr/scripts/" 2>/dev/null || true
+  chmod +x "$CONFIG/hypr/scripts/"*.sh  2>/dev/null || true
 
-  log_ok "Dotfiles instalados"
+  cp -r "$DOTFILES/waybar"   "$CONFIG/"
+  cp -r "$DOTFILES/rofi"     "$CONFIG/"
+  cp -r "$DOTFILES/kitty"    "$CONFIG/"
+  cp -r "$DOTFILES/swaync"   "$CONFIG/"
+  cp -r "$DOTFILES/hyprlock" "$CONFIG/"
+  cp -r "$DOTFILES/hypridle" "$CONFIG/" 2>/dev/null || true
+
+  # Criar diretório Lune
+  mkdir -p "$HOME/.config/lune/wallpapers"
+
+  log_ok "Dotfiles Hyprland aplicados"
 }
 
-# ── Configurar Flathub ───────────────────────────────────────
-setup_flatpak() {
-  log_step "Configurando Flathub"
+# ── Aplicar tema KDE Lune ────────────────────────────────────
+apply_kde_theme() {
+  log_step "Aplicando tema Lune Dark no KDE"
+
+  mkdir -p ~/.local/share/color-schemes
+
+  cat > ~/.local/share/color-schemes/LuneDark.colors << 'COLORS'
+[General]
+ColorScheme=LuneDark
+Name=Lune Dark
+
+[Colors:Window]
+BackgroundNormal=13,14,20
+ForegroundNormal=232,232,240
+DecorationFocus=200,168,233
+
+[Colors:Button]
+BackgroundNormal=26,27,38
+ForegroundNormal=232,232,240
+DecorationFocus=200,168,233
+
+[Colors:Selection]
+BackgroundNormal=200,168,233
+ForegroundNormal=13,14,20
+
+[Colors:View]
+BackgroundNormal=13,14,20
+ForegroundNormal=232,232,240
+DecorationFocus=200,168,233
+
+[WM]
+activeBackground=13,14,20
+activeForeground=200,168,233
+inactiveBackground=13,14,20
+inactiveForeground=160,160,176
+COLORS
+
+  log_ok "Tema Lune Dark criado para KDE"
+  log_info "Aplique em: Configurações → Aparência → Esquema de Cores → Lune Dark"
+}
+
+# ── Aplicar tema GNOME Lune ──────────────────────────────────
+apply_gnome_theme() {
+  log_step "Aplicando tema Lune no GNOME"
+
+  # Instalar extensões básicas
+  sudo pacman -S --noconfirm --needed \
+    gnome-shell-extensions 2>/dev/null || true
+
+  # Configurar cores via gsettings
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+  gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null || true
+  gsettings set org.gnome.desktop.interface accent-color 'purple' 2>/dev/null || true
+
+  log_ok "Tema Lune aplicado no GNOME"
+}
+
+# ── Executar scripts base ────────────────────────────────────
+run_base_scripts() {
+  log_step "Aplicando configurações base do Lune OS"
+
+  bash "$SCRIPT_DIR/gpu-detect.sh"
+  bash "$SCRIPT_DIR/performance.sh"
+  bash "$SCRIPT_DIR/folders.sh"
+
+  if [ "$INSTALL_DESKTOP" = "hyprland" ]; then
+    bash "$SCRIPT_DIR/binfmt.sh"
+    bash "$SCRIPT_DIR/wallust.sh" --setup
+  fi
+
+  log_ok "Configurações base aplicadas"
+}
+
+# ── Instalar pacotes comuns ──────────────────────────────────
+install_common() {
+  log_step "Instalando pacotes essenciais"
+
+  sudo pacman -S --noconfirm --needed \
+    wine wine-mono \
+    flatpak \
+    timeshift \
+    noto-fonts \
+    ttf-inter \
+    ttf-jetbrains-mono-nerd \
+    nautilus vlc libreoffice-fresh \
+    blueman cups \
+    xdg-user-dirs
 
   flatpak remote-add --if-not-exists flathub \
     https://dl.flathub.org/repo/flathub.flatpakrepo
 
-  log_info "Instalando apps essenciais via Flatpak..."
-  flatpak install -y flathub \
-    com.google.Chrome \
-    com.discordapp.Discord \
-    com.spotify.Client \
-    org.telegram.desktop \
-    com.obsproject.Studio
-
-  log_ok "Flathub configurado e apps instalados"
-}
-
-# ── Configurar Timeshift ─────────────────────────────────────
-setup_timeshift() {
-  log_step "Configurando Timeshift + Btrfs"
-
-  # Criar config do Timeshift
-  sudo mkdir -p /etc/timeshift
-
-  sudo tee /etc/timeshift/timeshift.json > /dev/null <<EOF
-{
-  "backup_device_uuid": "$(findmnt -n -o UUID /)",
-  "parent_device_uuid": "",
-  "do_first_run": "false",
-  "btrfs_mode": "true",
-  "include_btrfs_home_for_backup": "false",
-  "include_btrfs_home_for_restore": "false",
-  "stop_cron_emails": "true",
-  "btrfs_use_qgroup": "true",
-  "schedule_monthly": "false",
-  "schedule_weekly": "true",
-  "schedule_daily": "false",
-  "schedule_hourly": "false",
-  "schedule_boot": "false",
-  "count_monthly": "2",
-  "count_weekly": "3",
-  "count_daily": "5",
-  "count_hourly": "6",
-  "count_boot": "5",
-  "snapshot_size": "",
-  "snapshot_count": "",
-  "date_format": "%Y-%m-%d %H:%M:%S",
-  "exclude": [],
-  "exclude-apps": []
-}
-EOF
-
-  log_ok "Timeshift configurado com snapshots semanais automáticos"
-}
-
-# ── Configurar systemd timers ────────────────────────────────
-setup_timers() {
-  log_step "Configurando atualizações automáticas silenciosas"
-
-  # Timer de atualização diária
-  sudo tee /etc/systemd/system/lune-update.service > /dev/null <<EOF
-[Unit]
-Description=Lune OS — Atualização Silenciosa
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/lune-update.sh
-StandardOutput=journal
-StandardError=journal
-EOF
-
-  sudo tee /etc/systemd/system/lune-update.timer > /dev/null <<EOF
-[Unit]
-Description=Lune OS — Timer de Atualização Diária
-
-[Timer]
-OnCalendar=*-*-* 03:00:00
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-EOF
-
-  # Script de atualização
-  sudo tee /usr/local/bin/lune-update.sh > /dev/null <<'EOF'
-#!/bin/bash
-# Cria snapshot antes de atualizar
-timeshift --create --comments "Pre-update snapshot" --tags W 2>/dev/null || true
-# Atualiza sistema
-pacman -Syu --noconfirm 2>/dev/null || true
-# Atualiza Flatpaks
-flatpak update -y 2>/dev/null || true
-EOF
-
-  sudo chmod +x /usr/local/bin/lune-update.sh
-  sudo systemctl daemon-reload
-  sudo systemctl enable --now lune-update.timer
-
-  log_ok "Timer de atualização silenciosa configurado (03:00 diário)"
+  log_ok "Pacotes essenciais instalados"
 }
 
 # ── Configurar SDDM ──────────────────────────────────────────
 setup_sddm() {
-  log_step "Configurando tela de login SDDM"
-
-  sudo mkdir -p /etc/sddm.conf.d
-
-  sudo tee /etc/sddm.conf.d/lune.conf > /dev/null <<EOF
-[Theme]
-Current=lune-sddm
-
-[General]
-DisplayServer=wayland
-GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
-
-[Wayland]
-CompositorCommand=kwin_wayland --no-lockscreen
-EOF
-
-  sudo systemctl enable sddm
-  log_ok "SDDM configurado"
+  log_step "Configurando tema de login SDDM"
+  bash "$SCRIPT_DIR/setup-sddm.sh" 2>/dev/null || \
+    log_warn "SDDM não configurado — rode setup-sddm.sh manualmente"
 }
 
 # ── Finalização ──────────────────────────────────────────────
 finish() {
-  log_step "Instalação concluída"
-
   echo ""
   echo -e "${GREEN}✅ Lune OS instalado com sucesso!${NC}"
+  echo -e "${CYAN}Ambiente: $INSTALL_DESKTOP${NC}"
   echo ""
-  echo -e "${CYAN}Próximos passos:${NC}"
-  echo "  1. Reinicie o sistema: sudo reboot"
-  echo "  2. Na tela de login, selecione a sessão Hyprland"
-  echo "  3. Use Super+Espaço para abrir apps"
-  echo "  4. Use Super+F1 para ver todos os atalhos"
-  echo "  5. Use Super+W para trocar o wallpaper"
+
+  case "$INSTALL_DESKTOP" in
+    hyprland)
+      echo "  1. Reinicie: sudo reboot"
+      echo "  2. Na tela de login selecione: Hyprland"
+      echo "  3. Super+Espaço → launcher de apps"
+      echo "  4. Super+F1 → todos os atalhos"
+      ;;
+    kde)
+      echo "  1. Reinicie: sudo reboot"
+      echo "  2. Entre no KDE normalmente"
+      echo "  3. Configurações → Aparência → Lune Dark"
+      ;;
+    gnome)
+      echo "  1. Reinicie: sudo reboot"
+      echo "  2. Entre no GNOME normalmente"
+      echo "  3. O tema escuro já foi aplicado"
+      ;;
+  esac
+
   echo ""
   echo -e "${PURPLE}🌙 Your world, just lighter.${NC}"
   echo ""
@@ -307,15 +310,29 @@ finish() {
 # ── Main ─────────────────────────────────────────────────────
 main() {
   banner
-  check_root
-  check_internet
-  check_cachyos
-  install_dependencies
-  run_scripts
-  install_dotfiles
-  setup_flatpak
-  setup_timeshift
-  setup_timers
+  detect_desktop
+  choose_desktop
+  install_common
+
+  case "$INSTALL_DESKTOP" in
+    hyprland)
+      install_hyprland
+      apply_hyprland_dotfiles
+      ;;
+    kde|*plasma*)
+      install_kde
+      apply_kde_theme
+      ;;
+    gnome)
+      install_gnome
+      apply_gnome_theme
+      ;;
+    *)
+      log_warn "Desktop não reconhecido — aplicando apenas configurações base"
+      ;;
+  esac
+
+  run_base_scripts
   setup_sddm
   finish
 }
