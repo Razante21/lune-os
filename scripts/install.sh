@@ -98,7 +98,8 @@ install_hyprland() {
 
   sudo pacman -S --noconfirm --needed \
     hyprland hyprland-qtutils \
-    waybar rofi-wayland kitty \
+    rofi-wayland kitty \
+    qt6-declarative qt6-multimedia python-requests \
     swaync hyprlock hypridle \
     swww wallust \
     xdg-desktop-portal-hyprland \
@@ -107,6 +108,17 @@ install_hyprland() {
     grim slurp \
     wlogout playerctl brightnessctl \
     nm-applet blueman
+
+  # AUR Packages
+  if command -v yay &>/dev/null; then
+    yay -S --noconfirm --needed quickshell-git matugen-bin
+  else
+    log_warn "yay não encontrado. Por favor, instale quickshell-git e matugen-bin via AUR."
+  fi
+
+  # Python dependencies for Media Hub
+  python3 -m pip install --user curl_cffi requests 2>/dev/null || \
+    log_warn "Falha ao instalar dependências Python via pip. O Media Hub pode não funcionar."
 
   log_ok "Hyprland instalado"
 }
