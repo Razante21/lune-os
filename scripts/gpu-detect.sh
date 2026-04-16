@@ -13,6 +13,9 @@ log_info()  { echo -e "${BLUE}[GPU]${NC} $1"; }
 log_ok()    { echo -e "${GREEN}[GPU]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[GPU]${NC} $1"; }
 
+GPU_VENDOR_FILE_USER="$HOME/.config/lune/gpu-vendor"
+GPU_VENDOR_FILE_SYSTEM="/etc/lune/gpu-vendor"
+
 # Detectar ambiente
 IS_CODESPACES=false
 IS_CACHYOS=false
@@ -28,6 +31,11 @@ install_pciutils() {
   elif command -v apt-get &>/dev/null; then
     sudo apt-get install -y -qq pciutils 2>/dev/null || true
   fi
+}
+
+# ── Detectar módulo NVIDIA já instalado ──────────────────────
+nvidia_module_installed() {
+  pacman -Qq 2>/dev/null | grep -Eq '(^|-)nvidia-open($|-)|(^|-)linux-cachyos.*nvidia-open|(^|-)nvidia-(535xx|550xx)-dkms($|-)|(^|-)nvidia-dkms($|-)' 
 }
 
 # ── Detectar GPU ─────────────────────────────────────────────
@@ -87,14 +95,21 @@ install_driver() {
 
   case "$GPU_VENDOR" in
     nvidia)
-      sudo pacman -S --noconfirm --needed \
-        nvidia-dkms nvidia-utils nvidia-settings libva-nvidia-driver lib32-nvidia-utils
+      local nvidia_packages=(nvidia-utils nvidia-settings libva-nvidia-driver lib32-nvidia-utils)
+
+      if nvidia_module_installed; then
+        log_warn "Módulo NVIDIA já detectado no sistema — pulando reinstalação do kernel module"
+      else
+        nvidia_packages=(nvidia-dkms "${nvidia_packages[@]}")
+      fi
+
+      sudo pacman -S --noconfirm --needed "${nvidia_packages[@]}"
       sudo tee /etc/modprobe.d/nvidia.conf > /dev/null <<EOF
 options nvidia_drm modeset=1 fbdev=1
 options nvidia NVreg_UsePageAttributeTable=1
 EOF
       sudo mkinitcpio -P 2>/dev/null || true
-      log_ok "Driver NVIDIA instalado"
+      log_ok "Driver NVIDIA configurado"
       ;;
     amd)
       sudo pacman -S --noconfirm --needed \
@@ -112,7 +127,12 @@ EOF
 # ── Salvar vendor ────────────────────────────────────────────
 save_vendor() {
   mkdir -p "$HOME/.config/lune"
-  echo "$GPU_VENDOR" > "$HOME/.config/lune/gpu-vendor"
+  echo "$GPU_VENDOR" > "$GPU_VENDOR_FILE_USER"
+  mkdir -p /etc/lune 2>/dev/null || true
+  if command -v sudo &>/dev/null; then
+    sudo mkdir -p /etc/lune 2>/dev/null || true
+    echo "$GPU_VENDOR" | sudo tee "$GPU_VENDOR_FILE_SYSTEM" >/dev/null 2>&1 || true
+  fi
   log_info "Vendor salvo em ~/.config/lune/gpu-vendor"
 }
 

@@ -101,6 +101,7 @@ install_hyprland() {
     hyprland \
     rofi-wayland kitty \
     qt6-declarative qt6-multimedia python-requests \
+    qt5ct qt6ct kvantum \
     swaync hyprlock hypridle \
     swww \
     xdg-desktop-portal-hyprland \
@@ -110,13 +111,43 @@ install_hyprland() {
     wlogout playerctl brightnessctl \
     network-manager-applet blueman
 
+  # hypryou-utils só pode entrar se hyprland-guiutils não estiver preso como dependência
+  local hypryou_utils_pkg="hypryou-utils"
+  if pacman -Q hyprland-guiutils &>/dev/null; then
+    local required_by
+    required_by="$(pacman -Qi hyprland-guiutils 2>/dev/null | awk -F': ' '/^Required By/{print $2}')"
+
+    if [[ -n "$required_by" && "$required_by" != "None" ]]; then
+      log_warn "hyprland-guiutils é necessário para: $required_by"
+      log_warn "Mantendo o pacote do sistema e pulando hypryou-utils"
+      hypryou_utils_pkg=""
+    else
+      log_warn "Pacote conflitante detectado: hyprland-guiutils"
+      log_info "Removendo hyprland-guiutils para permitir instalação do hypryou-utils"
+      sudo pacman -Rns --noconfirm hyprland-guiutils || \
+        log_warn "Não foi possível remover hyprland-guiutils; continuando sem hypryou-utils"
+      if pacman -Q hyprland-guiutils &>/dev/null; then
+        hypryou_utils_pkg=""
+      fi
+    fi
+  fi
+
+  if [ -z "$hypryou_utils_pkg" ]; then
+    log_info "hypryou-utils não será instalado nesta máquina"
+  fi
+
   # Pacotes AUR
+  local aur_packages=(quickshell-git matugen-bin wallust)
+  if [ -n "$hypryou_utils_pkg" ]; then
+    aur_packages+=("$hypryou_utils_pkg")
+  fi
+
   if command -v yay &>/dev/null; then
-    yay -S --noconfirm --needed quickshell-git matugen-bin hyprland-qtutils wallust
+    yay -S --noconfirm --needed "${aur_packages[@]}"
   elif command -v paru &>/dev/null; then
-    paru -S --noconfirm --needed quickshell-git matugen-bin hyprland-qtutils wallust
+    paru -S --noconfirm --needed "${aur_packages[@]}"
   else
-    log_warn "yay ou paru não encontrados. Por favor, instale quickshell-git, matugen-bin, hyprland-qtutils e wallust via AUR."
+    log_warn "yay ou paru não encontrados. Por favor, instale ${aur_packages[*]} via AUR."
   fi
 
   # Python dependencies for Media Hub
