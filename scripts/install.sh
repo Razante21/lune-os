@@ -96,24 +96,27 @@ choose_desktop() {
 install_hyprland() {
   log_step "Instalando Hyprland + componentes Lune OS"
 
+  # Pacotes Oficiais
   sudo pacman -S --noconfirm --needed \
-    hyprland hyprland-qtutils \
+    hyprland \
     rofi-wayland kitty \
     qt6-declarative qt6-multimedia python-requests \
     swaync hyprlock hypridle \
-    swww wallust \
+    swww \
     xdg-desktop-portal-hyprland \
     polkit-kde-agent \
     wl-clipboard cliphist \
     grim slurp \
     wlogout playerctl brightnessctl \
-    nm-applet blueman
+    network-manager-applet blueman
 
-  # AUR Packages
+  # Pacotes AUR
   if command -v yay &>/dev/null; then
-    yay -S --noconfirm --needed quickshell-git matugen-bin
+    yay -S --noconfirm --needed quickshell-git matugen-bin hyprland-qtutils wallust
+  elif command -v paru &>/dev/null; then
+    paru -S --noconfirm --needed quickshell-git matugen-bin hyprland-qtutils wallust
   else
-    log_warn "yay não encontrado. Por favor, instale quickshell-git e matugen-bin via AUR."
+    log_warn "yay ou paru não encontrados. Por favor, instale quickshell-git, matugen-bin, hyprland-qtutils e wallust via AUR."
   fi
 
   # Python dependencies for Media Hub

@@ -36,6 +36,15 @@ ShellRoot {
             hoverEnabled: true
         }
 
+        // --- Left Hover Trigger ---
+        MouseArea {
+            id: leftHoverTrigger
+            width: 10
+            height: parent.height
+            anchors.left: parent.left
+            hoverEnabled: true
+        }
+
         // --- Top Drawer (Hidden Panel) ---
         Loader {
             id: drawerLoader
@@ -46,6 +55,19 @@ ShellRoot {
                 id: topDrawer
                 visible: topHoverTrigger.containsMouse
                 opacity: topHoverTrigger.containsMouse ? 1 : 0
+            }
+        }
+
+        // --- Side Drawer (Navigation) ---
+        Loader {
+            id: sideDrawerLoader
+            active: true
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            sourceComponent: SideDrawer {
+                id: sideDrawer
+                isOpen: leftHoverTrigger.containsMouse
             }
         }
 
@@ -103,6 +125,9 @@ ShellRoot {
                 item: drawerLoader.item
             }
             Region {
+                item: sideDrawerLoader.item
+            }
+            Region {
                 item: launcherLoader.item
             }
             Region {
@@ -142,6 +167,15 @@ ShellRoot {
             wallpaperLoader.active = !wallpaperLoader.active;
             if (wallpaperLoader.active) {
                 wallpaperLoader.item.opened = true;
+            }
+        }
+    }
+
+    IpcHandler {
+        target: "lune-side-drawer"
+        function toggle() {
+            if (sideDrawerLoader.item) {
+                sideDrawerLoader.item.isOpen = !sideDrawerLoader.item.isOpen;
             }
         }
     }
