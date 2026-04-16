@@ -110,13 +110,21 @@ install_hyprland() {
     wlogout playerctl brightnessctl \
     network-manager-applet blueman
 
+  # Conflito conhecido: hypryou-utils substitui hyprland-guiutils
+  if pacman -Q hyprland-guiutils &>/dev/null; then
+    log_warn "Pacote conflitante detectado: hyprland-guiutils"
+    log_info "Removendo hyprland-guiutils para permitir instalação do hypryou-utils"
+    sudo pacman -Rns --noconfirm hyprland-guiutils || \
+      log_error "Falha ao remover hyprland-guiutils. Remova manualmente e execute novamente."
+  fi
+
   # Pacotes AUR
   if command -v yay &>/dev/null; then
-    yay -S --noconfirm --needed quickshell-git matugen-bin hyprland-qtutils wallust
+    yay -S --noconfirm --needed quickshell-git matugen-bin hypryou-utils wallust
   elif command -v paru &>/dev/null; then
-    paru -S --noconfirm --needed quickshell-git matugen-bin hyprland-qtutils wallust
+    paru -S --noconfirm --needed quickshell-git matugen-bin hypryou-utils wallust
   else
-    log_warn "yay ou paru não encontrados. Por favor, instale quickshell-git, matugen-bin, hyprland-qtutils e wallust via AUR."
+    log_warn "yay ou paru não encontrados. Por favor, instale quickshell-git, matugen-bin, hypryou-utils e wallust via AUR."
   fi
 
   # Python dependencies for Media Hub
