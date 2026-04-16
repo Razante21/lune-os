@@ -11,6 +11,10 @@ REBOOT_NEEDED=false
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"; }
 
+nvidia_module_installed() {
+  pacman -Qq 2>/dev/null | grep -Eq '(^|-)nvidia-open($|-)|(^|-)linux-cachyos.*nvidia-open|(^|-)nvidia-(535xx|550xx)-dkms($|-)|(^|-)nvidia-dkms($|-)'
+}
+
 notify() {
   local title="$1"
   local body="$2"
@@ -68,6 +72,15 @@ update_flatpaks() {
 # ── Atualizar driver GPU ─────────────────────────────────────
 update_gpu_driver() {
   local vendor_file="/etc/lune/gpu-vendor"
+  local user_home
+
+  if [ ! -f "$vendor_file" ] && [ -n "$NOTIFY_USER" ]; then
+    user_home=$(getent passwd "$NOTIFY_USER" | cut -d: -f6)
+    if [ -n "$user_home" ] && [ -f "$user_home/.config/lune/gpu-vendor" ]; then
+      vendor_file="$user_home/.config/lune/gpu-vendor"
+    fi
+  fi
+
   [ -f "$vendor_file" ] || return
 
   local vendor
@@ -76,7 +89,14 @@ update_gpu_driver() {
 
   case "$vendor" in
     nvidia)
-      if pacman -Qu nvidia-dkms nvidia-utils 2>/dev/null | grep -q .; then
+      if nvidia_module_installed; then
+        if pacman -Qu nvidia-utils nvidia-settings libva-nvidia-driver lib32-nvidia-utils 2>/dev/null | grep -q .; then
+          log "Atualizando user-space NVIDIA..."
+          pacman -S --noconfirm nvidia-utils nvidia-settings libva-nvidia-driver lib32-nvidia-utils 2>/dev/null >> "$LOG_FILE" || true
+          REBOOT_NEEDED=true
+          log "User-space NVIDIA atualizado — reinicialização pode ser necessária"
+        fi
+      elif pacman -Qu nvidia-dkms nvidia-utils 2>/dev/null | grep -q .; then
         log "Atualizando driver NVIDIA..."
         pacman -S --noconfirm nvidia-dkms nvidia-utils 2>/dev/null >> "$LOG_FILE" || true
         REBOOT_NEEDED=true
