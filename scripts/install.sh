@@ -268,6 +268,7 @@ install_common() {
     wine wine-mono flatpak timeshift
     noto-fonts inter-font ttf-jetbrains-mono-nerd
     nautilus vlc libreoffice-fresh blueman cups xdg-user-dirs
+    qt5-graphicaleffects qt5-quickcontrols2 qt6-declarative qt6-5compat
   )
 
   for pkg in "${packages[@]}"; do
