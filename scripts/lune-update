@@ -1,0 +1,23 @@
+#!/bin/bash
+# Lune OS Update Utility
+# Pulls the latest changes and runs the installation script.
+
+REPO_DIR="$HOME/Downloads/lune-os"
+cd "$REPO_DIR" || exit 1
+
+echo "🌙 Updating Lune OS..."
+
+# Pull latest changes
+if git pull origin main; then
+    echo "✅ Changes pulled successfully."
+
+    # Run the installation script to apply changes
+    echo "🚀 Applying updates..."
+    bash scripts/install.sh
+
+    notify-send "🌙 Lune OS" "Update applied successfully! Please restart the shell to see changes."
+else
+    echo "❌ Failed to pull updates. Please check your git status."
+    notify-send "🌙 Lune OS" "Update failed. Please check the terminal for errors."
+    exit 1
+fi

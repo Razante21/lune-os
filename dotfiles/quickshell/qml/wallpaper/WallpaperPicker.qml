@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Shapes
+import Quickshell
 import "components"
 import "../style.qml" as Style
 
@@ -10,6 +11,26 @@ Item {
     width: 1000
     height: 700
     visible: opened
+
+    ListModel {
+        id: wallpaperModel
+    }
+
+    function fetchWallpapers() {
+        Process.run(["python", "scripts/wallpaper_manager.py", "list"], (output) => {
+            try {
+                const paths = JSON.parse(output);
+                wallpaperModel.clear();
+                paths.forEach(path => {
+                    wallpaperModel.append({"path": path, "name": path.split('/').pop()});
+                });
+            } catch (e) {
+                console.error("Failed to parse wallpaper list:", e);
+            }
+        });
+    }
+
+    Component.onCompleted: fetchWallpapers()
 
     Behavior on opacity { NumberAnimation { duration: 200 } }
     opacity: opened ? 1 : 0
@@ -68,9 +89,10 @@ Item {
                     cellWidth: 220; cellHeight: 160
                     clip: true
 
-                    model: 10
+                    model: wallpaperModel
                     delegate: WallpaperTile {
-                        index: index
+                        path: model.path
+                        name: model.name
                     }
                 }
             }
@@ -78,7 +100,8 @@ Item {
     }
 
     component WallpaperTile : Item {
-        property int index: 0
+        property string path: ""
+        property string name: ""
         width: 200
         height: 140
 
@@ -104,7 +127,7 @@ Item {
 
         Image {
             anchors.fill: parent
-            source: "https://picsum.photos/200/140?random=" + index
+            source: "file://" + path
             fillMode: Image.PreserveAspectCrop
             opacity: 0.7
         }
@@ -113,10 +136,19 @@ Item {
             anchors.bottom: parent.bottom
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.margins: 10
-            text: "Wallpaper " + index
+            text: name
             color: Style.text
             font.pixelSize: 11
             font.bold: true
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                Process.run(["python", "scripts/wallpaper_manager.py", "apply", path], (output) => {
+                    console.log("Wallpaper applied:", output);
+                });
+            }
         }
     }
 }

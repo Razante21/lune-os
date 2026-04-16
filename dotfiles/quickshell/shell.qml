@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import "qml"
+import "qml/components"
 
 ShellRoot {
     id: root
@@ -25,6 +26,28 @@ ShellRoot {
         }
         color: "transparent"
         focusable: true
+
+        // --- Top Hover Trigger ---
+        MouseArea {
+            id: topHoverTrigger
+            width: parent.width
+            height: 10
+            anchors.top: parent.top
+            hoverEnabled: true
+        }
+
+        // --- Top Drawer (Hidden Panel) ---
+        Loader {
+            id: drawerLoader
+            active: true
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+            sourceComponent: TopDrawer {
+                id: topDrawer
+                visible: topHoverTrigger.containsMouse
+                opacity: topHoverTrigger.containsMouse ? 1 : 0
+            }
+        }
 
         // --- Top Bar ---
         Loader {
@@ -75,6 +98,9 @@ ShellRoot {
         mask: Region {
             Region {
                 item: topBarLoader.item
+            }
+            Region {
+                item: drawerLoader.item
             }
             Region {
                 item: launcherLoader.item
