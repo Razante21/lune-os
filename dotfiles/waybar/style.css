@@ -1,11 +1,5 @@
-/* Lune OS — Waybar Style */
-/* Três ilhas com glassmorphism e paleta lilás/azul */
-
-@import url("colors.css");
-
-/* ── Reset global ──────────────────────────────────────────── */
 * {
-    font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif;
+    font-family: "Inter", sans-serif;
     font-size: 13px;
     font-weight: 500;
     border: none;
@@ -15,138 +9,55 @@
     min-height: 0;
 }
 
-/* ── Base de todas as ilhas ────────────────────────────────── */
 window#waybar {
-    background: transparent;
-}
-
-window#waybar.bar-left,
-window#waybar.bar-center,
-window#waybar.bar-right {
-    background: rgba(13, 14, 20, 0.65);
+    background: rgba(13, 14, 20, 0.70);
     border-radius: 14px;
-    border-bottom: 1.5px solid @accent;
-    box-shadow: 0 4px 24px rgba(200, 168, 233, 0.08);
-    padding: 0 4px;
+    border-bottom: 2px solid #C8A8E9;
+    color: #E8E8F0;
 }
 
-/* ── Ilha Esquerda — Workspaces ────────────────────────────── */
 #workspaces {
     padding: 4px 8px;
-    gap: 4px;
 }
 
 #workspaces button {
     background: transparent;
-    color: @text-dim;
+    color: #A0A0B0;
+    padding: 2px 8px;
+    margin: 0 2px;
     border-radius: 50%;
-    padding: 2px 6px;
-    min-width: 24px;
-    min-height: 24px;
     font-size: 18px;
-    transition: all 0.2s ease;
-}
-
-#workspaces button:hover {
-    color: @accent;
-    background: rgba(200, 168, 233, 0.1);
 }
 
 #workspaces button.active {
-    color: @accent;
-    font-size: 18px;
+    color: #C8A8E9;
 }
 
-#workspaces button.urgent {
-    color: #eb5757;
-    animation: urgent-pulse 1s ease infinite;
+#workspaces button:hover {
+    background: rgba(200, 168, 233, 0.15);
+    color: #C8A8E9;
 }
 
-@keyframes urgent-pulse {
-    0%, 100% { color: #eb5757; }
-    50% { color: rgba(235, 87, 87, 0.4); }
-}
-
-/* ── Ilha Central — Relógio ────────────────────────────────── */
 #clock {
-    padding: 6px 16px;
-    color: @text;
-    font-size: 15px;
+    padding: 0 16px;
+    color: #E8E8F0;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    font-size: 14px;
 }
 
-/* ── Ilha Direita — Sistema ────────────────────────────────── */
-#pulseaudio,
-#network,
-#battery,
-#tray {
-    padding: 6px 10px;
-    color: @text;
-    transition: all 0.2s ease;
+#pulseaudio, #network, #battery, #tray {
+    padding: 0 10px;
+    color: #E8E8F0;
 }
 
-#pulseaudio:hover,
-#network:hover,
-#battery:hover {
-    color: @accent;
-    background: rgba(200, 168, 233, 0.08);
-    border-radius: 10px;
-}
+#battery.warning { color: #f2994a; }
+#battery.critical { color: #eb5757; }
+#network.disconnected { color: #eb5757; }
 
-/* Volume mutado */
-#pulseaudio.muted {
-    color: @text-dim;
-}
-
-/* Rede desconectada */
-#network.disconnected,
-#network.disabled {
-    color: rgba(235, 87, 87, 0.8);
-}
-
-/* Bateria estados */
-#battery.warning {
-    color: #f2994a;
-}
-
-#battery.critical {
-    color: #eb5757;
-    animation: battery-blink 1s ease infinite;
-}
-
-#battery.charging {
-    color: #6fcf97;
-}
-
-@keyframes battery-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-}
-
-/* Bandeja do sistema */
-#tray {
-    padding: 6px 8px;
-}
-
-#tray > .passive {
-    -gtk-icon-effect: dim;
-}
-
-#tray > .needs-attention {
-    -gtk-icon-effect: highlight;
-}
-
-/* ── Tooltip ────────────────────────────────────────────────── */
 tooltip {
     background: rgba(13, 14, 20, 0.95);
-    border: 1px solid rgba(200, 168, 233, 0.3);
+    border: 1px solid rgba(200, 168, 233, 0.4);
     border-radius: 10px;
-    color: @text;
+    color: #E8E8F0;
     padding: 8px 12px;
-}
-
-tooltip label {
-    color: @text;
-    font-size: 12px;
 }
