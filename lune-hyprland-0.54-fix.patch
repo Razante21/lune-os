@@ -1,0 +1,302 @@
+From d866d5e66095c15dd41d2bca9e57846a027a177d Mon Sep 17 00:00:00 2001
+From: "Claude (via Pedro)" <claude@anthropic.com>
+Date: Thu, 16 Apr 2026 23:55:58 +0000
+Subject: [PATCH] =?UTF-8?q?Fix=20Hyprland=200.54=20config=20syntax=20?=
+ =?UTF-8?q?=E2=80=94=20removes=20old=20v1=20windowrules,=20fixes=20layerru?=
+ =?UTF-8?q?les=20ignore=5Falpha,=20removes=20deprecated=20workspace=5Fswip?=
+ =?UTF-8?q?e=20gestures?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- windowrules.conf: converte para sintaxe match:class obrigatória no 0.53+
+- animations.conf: adiciona 'windows' master e remove popin 80% dos Out antigos
+- hyprland.conf: remove workspace_swipe/workspace_swipe_fingers (deprecados 0.51+), usa nova sintaxe 'gesture = 3, horizontal, workspace'
+- layerrules: 'ignorealpha' -> 'ignore_alpha 0.3', 'blur' -> 'blur on', 'waybar' -> 'match:namespace waybar'
+- fix-configs.sh: alinhado com sintaxe nova
+---
+ dotfiles/hypr/conf/animations.conf  | 25 ++++----
+ dotfiles/hypr/conf/appearance.conf  |  2 +-
+ dotfiles/hypr/conf/windowrules.conf | 88 ++++++++++++++++-------------
+ dotfiles/hypr/hyprland.conf         | 23 +++++---
+ scripts/fix-configs.sh              | 35 +++++++-----
+ 5 files changed, 99 insertions(+), 74 deletions(-)
+
+diff --git a/dotfiles/hypr/conf/animations.conf b/dotfiles/hypr/conf/animations.conf
+index 0b832cd..97bad5c 100644
+--- a/dotfiles/hypr/conf/animations.conf
++++ b/dotfiles/hypr/conf/animations.conf
+@@ -1,5 +1,5 @@
+ # Lune OS — Animations Configuration
+-# Sintaxe atualizada para Hyprland 0.53+
++# Sintaxe Hyprland 0.53+ / 0.54
+ # Referência: https://wiki.hypr.land/Configuring/Animations/
+ 
+ animations {
+@@ -12,25 +12,26 @@ animations {
+     bezier = easeInOut,    0.45, 0, 0.55, 1
+ 
+     # ── Janelas ───────────────────────────────────────────────
+-    animation = windowsIn,   1, 3, easeOutBack
+-    animation = windowsOut,  1, 2, easeInOut
+-    animation = windowsMove, 1, 3, easeOutExpo
++    # windows é a master; windowsIn/windowsOut/windowsMove são filhas
++    animation = windows,       1, 3, easeOutBack
++    animation = windowsIn,     1, 3, easeOutBack,  popin 80%
++    animation = windowsOut,    1, 2, easeInOut,    popin 80%
++    animation = windowsMove,   1, 3, easeOutExpo
+ 
+     # ── Fade ──────────────────────────────────────────────────
+-    animation = fade,    1, 2, easeOutExpo
+-    animation = fadeIn,  1, 2, easeOutExpo
+-    animation = fadeOut, 1, 2, easeInOut
++    animation = fade,          1, 2, easeOutExpo
++    animation = fadeIn,        1, 2, easeOutExpo
++    animation = fadeOut,       1, 2, easeInOut
+ 
+     # ── Workspaces ────────────────────────────────────────────
+     animation = workspaces,       1, 4, easeOutExpo, slide
+     animation = specialWorkspace, 1, 3, easeOutExpo, slidevert
+ 
+     # ── Bordas animadas ───────────────────────────────────────
+-    animation = borderangle, 1, 8, linear, loop
++    animation = borderangle,   1, 8, linear, loop
+ 
+     # ── Layers (Waybar, Rofi, etc) ───────────────────────────
+-    # Nota: layers herda de fade por padrão — slide é estilo opcional
+-    animation = layers,    1, 3, easeOutExpo, fade
+-    animation = layersIn,  1, 3, easeOutBack, fade
+-    animation = layersOut, 1, 2, easeInOut,   fade
++    animation = layers,        1, 3, easeOutExpo, slide
++    animation = layersIn,      1, 3, easeOutBack, slide
++    animation = layersOut,     1, 2, easeInOut,   slide
+ }
+diff --git a/dotfiles/hypr/conf/appearance.conf b/dotfiles/hypr/conf/appearance.conf
+index d3d45bf..640d362 100644
+--- a/dotfiles/hypr/conf/appearance.conf
++++ b/dotfiles/hypr/conf/appearance.conf
+@@ -1,6 +1,6 @@
+ # Lune OS — Appearance Configuration
+ # Bordas, blur, sombras, arredondamento
+-# Sintaxe atualizada para Hyprland 0.41+
++# Sintaxe Hyprland 0.53+ / 0.54
+ 
+ decoration {
+     rounding = 12
+diff --git a/dotfiles/hypr/conf/windowrules.conf b/dotfiles/hypr/conf/windowrules.conf
+index 1080089..ab71b0b 100644
+--- a/dotfiles/hypr/conf/windowrules.conf
++++ b/dotfiles/hypr/conf/windowrules.conf
+@@ -1,55 +1,65 @@
+ # Lune OS — Window Rules
+-# Sintaxe atualizada para Hyprland 0.53+ (Dezembro 2025)
++# Sintaxe Hyprland 0.53+ / 0.54 — usa "match:" obrigatoriamente
+ # Referência: https://wiki.hypr.land/Configuring/Window-Rules/
+ 
+ # ── Janelas flutuantes ───────────────────────────────────────
+-windowrule =float, class:^(pavucontrol)$
+-windowrule =float, class:^(blueman-manager)$
+-windowrule =float, class:^(nm-connection-editor)$
+-windowrule =float, class:^(gnome-calculator)$
+-windowrule =float, class:^(file-roller)$
+-windowrule =float, title:^(Abrir arquivo)$
+-windowrule =float, title:^(Salvar arquivo)$
+-windowrule =float, title:^(Salvar como)$
++windowrule = float, match:class pavucontrol
++windowrule = float, match:class blueman-manager
++windowrule = float, match:class nm-connection-editor
++windowrule = float, match:class org.gnome.Calculator
++windowrule = float, match:class gnome-calculator
++windowrule = float, match:class file-roller
++windowrule = float, match:class org.gnome.FileRoller
++windowrule = float, match:title ^(Abrir arquivo)$
++windowrule = float, match:title ^(Salvar arquivo)$
++windowrule = float, match:title ^(Salvar como)$
++windowrule = float, match:title ^(Open File)$
++windowrule = float, match:title ^(Save File)$
+ 
+ # ── Tamanhos ─────────────────────────────────────────────────
+-windowrule =size 800 600, class:^(pavucontrol)$
+-windowrule =size 900 650, class:^(blueman-manager)$
+-windowrule =size 500 400, class:^(gnome-calculator)$
++windowrule = size 800 600, match:class pavucontrol
++windowrule = size 900 650, match:class blueman-manager
++windowrule = size 500 400, match:class gnome-calculator
++windowrule = size 500 400, match:class org.gnome.Calculator
+ 
+ # ── Centralizar ──────────────────────────────────────────────
+-windowrule =center, class:^(pavucontrol)$
+-windowrule =center, class:^(blueman-manager)$
+-windowrule =center, class:^(gnome-calculator)$
+-windowrule =center, class:^(file-roller)$
++windowrule = center, match:class pavucontrol
++windowrule = center, match:class blueman-manager
++windowrule = center, match:class gnome-calculator
++windowrule = center, match:class org.gnome.Calculator
++windowrule = center, match:class file-roller
++windowrule = center, match:class org.gnome.FileRoller
+ 
+ # ── Opacidade ────────────────────────────────────────────────
+-windowrule =opacity 0.95 0.85, class:^(kitty)$
+-windowrule =opacity 0.98 0.95, class:^(Code)$
+-windowrule =opacity 1.0 override 1.0 override, class:^(google-chrome)$
+-windowrule =opacity 1.0 override 1.0 override, class:^(vlc)$
++windowrule = opacity 0.95 0.85, match:class kitty
++windowrule = opacity 0.98 0.95, match:class Code
++windowrule = opacity 1.0 override 1.0 override, match:class google-chrome
++windowrule = opacity 1.0 override 1.0 override, match:class vlc
+ 
+ # ── Workspace por app ────────────────────────────────────────
+-windowrule =workspace 2, class:^(google-chrome)$
+-windowrule =workspace 3, class:^(Code)$
+-windowrule =workspace 4, class:^(discord)$
+-windowrule =workspace 4, class:^(telegram-desktop)$
+-windowrule =workspace 5, class:^(Spotify)$
++windowrule = workspace 2, match:class google-chrome
++windowrule = workspace 3, match:class Code
++windowrule = workspace 4, match:class discord
++windowrule = workspace 4, match:class telegram-desktop
++windowrule = workspace 5, match:class Spotify
+ 
+ # ── Wine / Windows apps ──────────────────────────────────────
+-windowrule =float, class:^(wine)$
+-windowrule =center, class:^(wine)$
++windowrule = float, match:class wine
++windowrule = center, match:class wine
++
++# ── Fix XWayland dragging issues ─────────────────────────────
++windowrule = suppressevent maximize, match:class .*
+ 
+ # ── Layerrules (Waybar, Rofi, Swaync) ───────────────────────
+-# Sintaxe v0.53+: layerrule = REGRA, NAMESPACE
+-layerrule = blur, waybar
+-layerrule = ignorealpha, waybar
+-
+-layerrule = blur, rofi
+-layerrule = ignorealpha, rofi
+-layerrule = dimaround, rofi
+-
+-layerrule = blur, swaync-control-center
+-layerrule = ignorealpha, swaync-control-center
+-layerrule = blur, swaync-notification-window
+-layerrule = ignorealpha, swaync-notification-window
++# Sintaxe v0.53+: layerrule = REGRA VALOR, match:namespace NAMESPACE
++layerrule = blur on, match:namespace waybar
++layerrule = ignore_alpha 0.3, match:namespace waybar
++
++layerrule = blur on, match:namespace rofi
++layerrule = ignore_alpha 0.3, match:namespace rofi
++layerrule = dimaround on, match:namespace rofi
++
++layerrule = blur on, match:namespace swaync-control-center
++layerrule = ignore_alpha 0.3, match:namespace swaync-control-center
++layerrule = blur on, match:namespace swaync-notification-window
++layerrule = ignore_alpha 0.3, match:namespace swaync-notification-window
+diff --git a/dotfiles/hypr/hyprland.conf b/dotfiles/hypr/hyprland.conf
+index 5386eb5..549f95c 100644
+--- a/dotfiles/hypr/hyprland.conf
++++ b/dotfiles/hypr/hyprland.conf
+@@ -5,8 +5,8 @@
+ # ███████╗╚██████╔╝██║ ╚████║███████╗
+ # ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+ # Your world, just lighter.
+-# Hyprland Configuration v0.1.0
+-# Compatível com Hyprland 0.53+ (2025/2026)
++# Hyprland Configuration v0.1.1
++# Compatível com Hyprland 0.53+ / 0.54 (2026)
+ 
+ # ── Módulos ──────────────────────────────────────────────────
+ source = ~/.config/hypr/conf/monitors.conf
+@@ -29,13 +29,20 @@ input {
+         tap-to-click = true
+         scroll_factor = 0.8
+     }
++}
+ 
+-    gestures {
+-        workspace_swipe = true
+-        workspace_swipe_fingers = 3
+-        workspace_swipe_distance = 300
+-        workspace_swipe_invert = true
+-    }
++# ── Gestures (nova sintaxe 0.51+) ────────────────────────────
++# workspace_swipe, workspace_swipe_fingers e similares foram removidos no 0.51+
++# Agora usa-se `gesture = N_DEDOS, DIRECAO, ACAO`
++gestures {
++    workspace_swipe_distance = 300
++    workspace_swipe_invert = true
++    workspace_swipe_min_speed_to_force = 30
++    workspace_swipe_cancel_ratio = 0.5
++    workspace_swipe_forever = true
++
++    # 3 dedos horizontal = trocar workspace
++    gesture = 3, horizontal, workspace
+ }
+ 
+ # ── Layout ───────────────────────────────────────────────────
+diff --git a/scripts/fix-configs.sh b/scripts/fix-configs.sh
+index d583de3..a4658dd 100644
+--- a/scripts/fix-configs.sh
++++ b/scripts/fix-configs.sh
+@@ -1,7 +1,8 @@
+ #!/bin/bash
+-# Lune OS — Corrige configs do Hyprland para versão atual
++# Lune OS — Corrige configs do Hyprland para versão 0.53+ / 0.54
+ 
+ CONFIG="$HOME/.config/hypr"
++mkdir -p "$CONFIG/conf"
+ 
+ # animations.conf
+ cat > "$CONFIG/conf/animations.conf" << 'EOF'
+@@ -11,18 +12,20 @@ animations {
+     bezier = easeOutBack, 0.34, 1.56, 0.64, 1
+     bezier = linear, 0, 0, 1, 1
+     bezier = easeInOut, 0.45, 0, 0.55, 1
+-    animation = windowsIn,   1, 3, easeOutBack,  slide
+-    animation = windowsOut,  1, 2, easeInOut,    fade
+-    animation = windowsMove, 1, 3, easeOutExpo,  slide
+-    animation = fade,        1, 2, easeOutExpo
+-    animation = workspaces,  1, 4, easeOutExpo,  slide
+-    animation = borderangle, 1, 8, linear,       loop
+-    animation = layers,      1, 3, easeOutExpo,  slide
++    animation = windows,       1, 3, easeOutBack
++    animation = windowsIn,     1, 3, easeOutBack,  popin 80%
++    animation = windowsOut,    1, 2, easeInOut,    popin 80%
++    animation = windowsMove,   1, 3, easeOutExpo
++    animation = fade,          1, 2, easeOutExpo
++    animation = workspaces,    1, 4, easeOutExpo,  slide
++    animation = borderangle,   1, 8, linear,       loop
++    animation = layers,        1, 3, easeOutExpo,  slide
+ }
+ EOF
+ 
+-# windowrules.conf
++# windowrules.conf — sintaxe correta 0.53+
+ cat > "$CONFIG/conf/windowrules.conf" << 'EOF'
++# Windowrules (sintaxe 0.53+: match:class é obrigatório)
+ windowrule = float,  match:class pavucontrol
+ windowrule = float,  match:class blueman-manager
+ windowrule = float,  match:class gnome-calculator
+@@ -32,10 +35,14 @@ windowrule = center, match:class gnome-calculator
+ windowrule = opacity 0.95 0.85, match:class kitty
+ windowrule = workspace 2, match:class google-chrome
+ windowrule = workspace 4, match:class discord
+-layerrule = blur on,       match:namespace waybar
+-layerrule = ignorezero on, match:namespace waybar
+-layerrule = blur on,       match:namespace rofi
+-layerrule = ignorezero on, match:namespace rofi
++windowrule = suppressevent maximize, match:class .*
++
++# Layerrules (sintaxe 0.53+: ignore_alpha com underscore e valor obrigatório)
++layerrule = blur on,           match:namespace waybar
++layerrule = ignore_alpha 0.3,  match:namespace waybar
++layerrule = blur on,           match:namespace rofi
++layerrule = ignore_alpha 0.3,  match:namespace rofi
++layerrule = dimaround on,      match:namespace rofi
+ EOF
+ 
+-echo "✅ Configs corrigidos!"
++echo "✅ Configs corrigidos para Hyprland 0.53+!"
+-- 
+2.43.0
+
